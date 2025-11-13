@@ -42,6 +42,9 @@
 ** or Windows-specific features on Windows.
 */
 /* #define LUA_USE_C89 */
+#if defined(__riscos) && !defined(__riscos64)
+#define LUA_USE_C89
+#endif
 
 
 /*
@@ -306,7 +309,7 @@
 ** default definition.
 */
 #if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 302) && \
-    defined(__ELF__)		/* { */
+    defined(__ELF__) && !defined(__riscos)		/* { */
 #define LUAI_FUNC	__attribute__((visibility("internal"))) extern
 #else				/* }{ */
 #define LUAI_FUNC	extern
@@ -657,7 +660,11 @@
 ** macro must include the header 'locale.h'.)
 */
 #if !defined(lua_getlocaledecpoint)
+#ifdef __riscos
+#define lua_getlocaledecpoint() '.' /* FIXME: Ugly hack */
+#else
 #define lua_getlocaledecpoint()		(localeconv()->decimal_point[0])
+#endif
 #endif
 
 
