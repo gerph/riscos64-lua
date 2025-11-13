@@ -1,0 +1,58 @@
+#!/usr/bin/env riscos-amu -f
+# Makefile for Lua
+#
+
+#
+# Program specific options:
+#
+COMPONENT  = Lua
+
+# Specifies additional targets for startup
+#INITTARGET = inittarget
+
+# Specifies additional targets for clean
+#CLEANTARGET = cleantarget
+
+# Files to export as part of export_hdr or export_libs
+# To export to the library in a subdirectory, use an export like:
+#   ${EXP_LIB}.${COMPONENT}.h.myheader
+EXPORTS    = ${EXP_LIB}.${COMPONENT}.h.lua \
+			 ${EXP_LIB}.${COMPONENT}.h.luaconf
+
+# Comma-separated list of paths to use for includes, such as:
+#	C:LibName.
+INCLUDES   =
+
+# Space separated list of defines to set, eg -DDEBUG
+CDEFINES   = -D_XOPEN_SOURCE=0
+#-DLUA_32BITS
+
+
+CORE_O=	o.lapi o.lcode o.lctype o.ldebug o.ldo o.ldump o.lfunc o.lgc o.llex \
+	o.lmem o.lobject o.lopcodes o.lparser o.lstate o.lstring o.ltable \
+	o.ltm o.lundump o.lvm o.lzio o.ltests
+AUX_O=	o.lauxlib
+LIB_O=	o.lbaselib o.ldblib o.liolib o.lmathlib o.loslib o.ltablib o.lstrlib \
+	o.lutf8lib o.loadlib o.lcorolib o.linit
+
+# Objects to build, using the format o.<name> (will be varied for build type)
+OBJS       = ${CORE_O} ${LIB_O} ${AUX_O}
+
+ifeq (${BUILD64},1)
+CDEFINES +=
+else
+CDEFINES +=
+endif
+
+include LibExport
+
+# Export rules
+# For any files you export with EXPORTS you may need to include an
+# export rule
+${EXP_LIB}.${COMPONENT}.h.lua: h.lua
+       ${CP} $?  $@  ${CPFLAGS}
+${EXP_LIB}.${COMPONENT}.h.luaconf: h.luaconf
+       ${CP} $?  $@  ${CPFLAGS}
+
+#---------------------------------------------------------------------------
+# Dynamic dependencies:
