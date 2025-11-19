@@ -386,11 +386,7 @@ static int os_setlocale (lua_State *L) {
      "numeric", "time", NULL};
   const char *l = luaL_optstring(L, 1, NULL);
   int op = luaL_checkoption(L, 2, "all", catnames);
-#ifdef __riscos
-  lua_pushstring(L, l); /* FIXME: Ugly hack */
-#else
   lua_pushstring(L, setlocale(cat[op], l));
-#endif
   return 1;
 }
 

@@ -450,6 +450,9 @@ static int llex (LexState *ls, SemInfo *seminfo) {
         inclinenumber(ls);
         break;
       }
+#ifdef GCW
+    case 0xa0:
+#endif
       case ' ': case '\f': case '\t': case '\v': {  /* spaces */
         next(ls);
         break;
@@ -485,9 +488,23 @@ static int llex (LexState *ls, SemInfo *seminfo) {
       }
       case '=': {
         next(ls);
+#ifdef GCW
+        switch(ls->current) {
+        case '=': next(ls); return TK_EQ; break;
+        case '>': next(ls); return TK_RETURN; break;
+        default: return '=';
+        }
+#else
         if (check_next1(ls, '=')) return TK_EQ;  /* '==' */
-        else return '=';
+      else return '=';
+#endif
       }
+#ifdef GCW
+      case '\\': {
+       next(ls);
+       return TK_FUNCTION;
+       }
+#endif
       case '<': {
         next(ls);
         if (check_next1(ls, '=')) return TK_LE;  /* '<=' */

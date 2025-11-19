@@ -1714,7 +1714,11 @@ static void checktoclose (LexState *ls, int level) {
 
 
 static void localstat (LexState *ls) {
-  /* stat -> LOCAL NAME ATTRIB { ',' NAME ATTRIB } ['=' explist] */
+#ifdef GCW
+  /* stat -> LOCAL ATTRIB NAME {',' ATTRIB NAME} [ IN exp | '=' explist] */
+#else
+/* stat -> LOCAL NAME ATTRIB { ',' NAME ATTRIB } ['=' explist] */
+#endif
   FuncState *fs = ls->fs;
   int toclose = -1;  /* index of to-be-closed variable (if any) */
   Vardesc *var;  /* last variable */
@@ -1733,6 +1737,37 @@ static void localstat (LexState *ls) {
     }
     nvars++;
   } while (testnext(ls, ','));
+#ifdef GCW
+  int lastline = ls->lastline;
+  if (testnext(ls, TK_IN)) {
+    lu_byte from_var;
+    int regs = ls->fs->freereg;
+    int vars = ls->fs->nactvar;
+
+    if (ls->linenumber != lastline)
+      luaX_syntaxerror(ls,"ambiguous syntax (unpack declaration x lexical environment)");
+    luaK_reserveregs(ls->fs, nvars);
+
+    new_localvarliteral(ls, "(from)");
+    expr(ls, &e);
+    luaK_exp2nextreg(ls->fs, &e);
+    adjustlocalvars(ls, nvars);
+    from_var = ls->fs->nactvar;
+    adjustlocalvars(ls, 1);
+    luaK_setoneret(ls->fs, &e);  /* close last expression */
+
+    for (nexps=0; nexps<nvars; nexps++) {
+      expdesc v, key;
+      init_exp(&e, VNONRELOC, ls->fs->freereg-1);
+      codestring(&key, localdebuginfo(ls->fs, vars+nexps)->varname);
+      luaK_indexed(ls->fs, &e, &key);
+      init_exp(&v, VLOCAL, regs+nexps);
+      luaK_storevar(ls->fs, &v, &e);
+    }
+    removevars(ls->fs, from_var);
+    return;
+  }
+#endif
   if (testnext(ls, '='))
     nexps = explist(ls, &e);
   else {
@@ -1780,6 +1815,30 @@ static void funcstat (LexState *ls, int line) {
   luaK_fixline(ls->fs, line);  /* definition "happens" in the first line */
 }
 
+#ifdef GCW
+static void inc_assignment(LexState *ls, struct LHS_assign *lh) {
+    int line;
+    BinOpr op = getbinopr(ls->t.token);
+    FuncState * fs=ls->fs;
+    expdesc e, v2;
+    /* reserve all registers needed by the lvalue */
+    luaK_reserveregs(fs,fs->freereg-fs->nactvar);
+    luaX_next(ls);
+    checknext(ls, '=');
+    line=ls->linenumber;
+    enterlevel(ls);
+    e = lh->v;
+    luaK_infix(fs,op,&e);
+    /* we only match one expr(), not a full explist(),
+       so "a+=2,2" will be a parse error. */
+    expr(ls,&v2);
+    luaK_posfix(fs, op, &e, &v2, line);
+    leavelevel(ls);
+    luaK_exp2nextreg(fs,&e);
+    luaK_setoneret(ls->fs, &e);
+    luaK_storevar(ls->fs, &lh->v, &e);
+}
+#endif
 
 static void exprstat (LexState *ls) {
   /* stat -> func | assignment */
@@ -1790,7 +1849,15 @@ static void exprstat (LexState *ls) {
     v.prev = NULL;
     restassign(ls, &v, 1);
   }
-  else {  /* stat -> func */
+else {  /* stat -> func */
+#ifdef GCW
+  switch(ls->t.token) {
+    case '%': case '*': case '/': case '+': case '-': case '^': case '&': case '|': case '~':
+    case TK_CONCAT: case TK_IDIV:
+    inc_assignment(ls, &v);
+    return;
+   }
+#endif
     Instruction *inst;
     check_condition(ls, v.v.k == VCALL, "syntax error");
     inst = &getinstruction(fs, &v.v);

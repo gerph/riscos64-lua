@@ -44,9 +44,20 @@ LUAMOD_API int (luaopen_debug) (lua_State *L);
 #define LUA_LOADLIBNAME	"package"
 LUAMOD_API int (luaopen_package) (lua_State *L);
 
+#ifdef GCW
+#define LUA_LPEGNAME	"lpeg"
+LUAMOD_API int (luaopen_lpeg) (lua_State *L);
+
+#define RISCOSLIBNAME	"riscos"
+LUAMOD_API int (luaopen_riscos) (lua_State *L);
+#endif
 
 /* open all previous libraries */
 LUALIB_API void (luaL_openlibs) (lua_State *L);
+
+#if defined(GCW) && !defined(lua_assert)
+#define lua_assert(x)	((void)0)
+#endif
 
 
 #endif
