@@ -801,8 +801,23 @@
 ** without modifying the main part of the file.
 */
 
+#ifdef __riscos
 
+#include "riscos_readline.h"
 
+#ifdef __riscos64
+#define lua_stdin_is_tty() (isatty(fileno(stdin)))
+#else
+#define lua_stdin_is_tty() ((stdin->__file) == 0)
+#endif
+
+#define lua_initreadline(L)  ((void)L)
+#define lua_readline(L,b,p) \
+        ((void)L, fputs(p, stdout), fflush(stdout),  /* show prompt */ \
+        os_readline(b, LUA_MAXINPUT) != 0)  /* get line */
+#define lua_saveline(L,line)    { (void)L; (void)line; }
+#define lua_freeline(L,b)   { (void)L; (void)b; }
+#endif
 
 
 #endif

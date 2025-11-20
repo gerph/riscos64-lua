@@ -1,0 +1,20 @@
+/*******************************************************************
+ * File:        riscos_readline
+ * Purpose:     Interface to read a line of input
+ * Author:      Gerph
+ * Date:        20 Nov 2025
+ ******************************************************************/
+
+#ifndef RISCOS_READLINE
+#define RISCOS_READLINE
+
+/*************************************************** Gerph *********
+ Function:      os_readline
+ Description:   Call OS_ReadLine for input
+ Parameters:    line-> line to read
+                len = max length including terminator
+ Returns:       1 for success, 0 for failure
+ ******************************************************************/
+int os_readline(char *line, int len);
+
+#endif

@@ -33,7 +33,7 @@ CDEFINES   =
 LIBS       = ${CLIB} C:Lua.o.libLua
 
 # Objects to build, using the format o.<name> (will be varied for build type)
-OBJS       = o.lua
+OBJS       = o.lua o.riscos_readline
 
 # Space separated list of XML files for building documentation.
 #DOCSRC = <prm-in-xml-sources>
