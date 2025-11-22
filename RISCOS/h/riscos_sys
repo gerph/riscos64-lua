@@ -1,0 +1,75 @@
+/*******************************************************************
+ * File:        riscos_sys
+ * Purpose:     System interfaces for RISC OS
+ * Author:      GCW, Gerph
+ * Date:        19 Nov 2025
+ ******************************************************************/
+
+/* Based on assembler source by GCW, 2020-12-03. */
+#include <stdint.h>
+#include "kernel.h"
+
+#define END_OF_RDIR (-1)
+#define RDIR_BUFLEN 320
+
+typedef struct rdir_data {
+    uint32_t loadaddr;                  /* 0   Load address, or high byte of date stamp (top three bytes are &000000) */
+    uint32_t execaddr;                  /* 4   Execution address, or low byte of date stamp */
+    uint32_t length;                    /* 8   Length */
+    uint32_t attr;                      /* 12  File attributes */
+    uint32_t objtype;                   /* 16  Object type */
+    uint32_t filetype;                  /* 20  Object file type 0, 1, 2, 3 */
+    char leafname[RDIR_BUFLEN - 24];    /* 24  Object name (null terminated) */
+} rdir_data_t;
+
+/*************************************************** Gerph *********
+ Function:      rdir
+ Description:   Read one item from a directory 'dir'.
+                First call should have offset = 0, new offset returned.
+                A returned offset of 0 signifies nothing was read,
+                and of -1 signifies no more to be read. Data read
+                into a buffer buf with filetype the word at
+                rdir_ftype = buf+20 and leaf name the zero-terminated
+                string at rdir_leaf = buf+24.
+                Assume leaf name has fewer than RDIR_BUFLEN-24 characters.
+ Parameters:    dir-> directory to read
+                buf-> buffer to populate
+ Returns:       next offset for read, or -1 if no more
+ ******************************************************************/
+int rdir(const char *dir, rdir_data_t *buf, int offset);
+
+
+#define FILETYPE_NO_TYPE (-1)
+#define FILETYPE_NO_FILE (-2)
+#define FILETYPE_ERROR   (-3)
+#define FILETYPE_DIR     (0x1000)
+#define FILETYPE_APP     (0x2000)
+
+/*************************************************** Gerph *********
+ Function:      file_type
+ Description:   Return filetype of named file
+ Parameters:    name-> filename
+ Returns:       filetype if typed,
+                -1 if untyped
+                &1000 if directory
+                &2000 if application
+                FILETYPE_NO_FILE if error
+ ******************************************************************/
+int file_type(const char *name);
+
+/*************************************************** Gerph *********
+ Function:      swi_str2num
+ Description:   Convert SWI string to a number
+ Parameters:    s-> SWI string
+ Returns:       SWI number, or 0xFFFFFFFF if not known
+ ******************************************************************/
+unsigned int swi_str2num(const char *s);
+
+/*************************************************** Gerph *********
+ Function:      swi_call
+ Description:   Call a SWI
+ Parameters:    r-> a 10 register list of integers to pass to SWI
+                    (and to return result in)
+ Returns:       pointer to error, or 0 if no error
+ ******************************************************************/
+_kernel_oserror *swi_call(unsigned int swinum, int *r);

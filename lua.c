@@ -168,6 +168,10 @@ static int docall (lua_State *L, int narg, int nres) {
 static void print_version (void) {
   lua_writestring(LUA_COPYRIGHT, strlen(LUA_COPYRIGHT));
   lua_writeline();
+#ifdef RISCOS
+  lua_writestring(RISCLUA_VERSION, strlen(RISCLUA_VERSION));
+  lua_writeline();
+#endif
 }
 
 

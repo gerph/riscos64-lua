@@ -1,0 +1,138 @@
+/*******************************************************************
+ * File:        riscos_sys
+ * Purpose:     System interfaces for RISC OS
+ * Author:      GCW, Gerph
+ * Date:        19 Nov 2025
+ ******************************************************************/
+
+/* Based on assembler source by GCW, 2020-12-03. */
+#include "swis.h"
+#include "kernel.h"
+
+#include "riscos_sys.h"
+
+#define NEXT_IS_NO_MORE (-2) /* Fake value to return for the next being end of directory */
+
+/*************************************************** Gerph *********
+ Function:      rdir
+ Description:   Read one item from a directory 'dir'.
+                First call should have offset = 0, new offset returned.
+                A returned offset of 0 signifies nothing was read,
+                and of -1 signifies no more to be read. Data read
+                into a buffer buf with filetype the word at
+                rdir_ftype = buf+20 and leaf name the zero-terminated
+                string at rdir_leaf = buf+24.
+                Assume leaf name has fewer than 103 characters.
+ Parameters:    dir-> directory to read
+                buf-> buffer to populate
+ Returns:       next offset for read, or -1 if no more
+ ******************************************************************/
+int rdir(const char *dir, rdir_data_t *buf, int offset)
+{
+    int nextoffset = 0;
+    int nread = 0;
+    if (offset == NEXT_IS_NO_MORE)
+        return END_OF_RDIR;
+    while (1)
+    {
+        _kernel_oserror *err;
+        err = _swix(OS_GBPB, _INR(0, 6) | _OUTR(3, 4),
+                             12, dir, buf, 1, offset, RDIR_BUFLEN, 0,
+                             &nread, &nextoffset);
+        if (err)
+        {
+            nextoffset = -1, nread = 0;
+            break;
+        }
+        if (nread == 1)
+            break;
+        if (nextoffset == -1)
+            break;
+    }
+    if (nread == 1 && nextoffset == -1)
+        nextoffset = NEXT_IS_NO_MORE;
+    return nextoffset;
+}
+
+
+
+/*************************************************** Gerph *********
+ Function:      file_type
+ Description:   Return filetype of named file
+ Parameters:    name-> filename
+ Returns:       filetype if typed,
+                -1 if untyped
+                &1000 if directory
+                &2000 if application
+                FILETYPE_NO_FILE if error
+ ******************************************************************/
+int file_type(const char *name)
+{
+    _kernel_oserror *err;
+    int objtype = 0;
+    int ftype = 0;
+    err = _swix(OS_File, _INR(0, 1)|_OUT(0)|_OUT(6),
+                         23, name,
+                         &objtype,
+                         &ftype);
+    if (err)
+        return FILETYPE_ERROR;
+    if (objtype == 0)
+        return FILETYPE_NO_TYPE;
+    return ftype;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      swi_str2num
+ Description:   Convert SWI string to a number
+ Parameters:    s-> SWI string
+ Returns:       SWI number, or 0xFFFFFFFF if not known
+ ******************************************************************/
+unsigned int swi_str2num(const char *s)
+{
+    _kernel_oserror *err;
+    int swinum = 0;
+    err = _swix(OS_SWINumberFromString, _IN(0)|_OUT(0), s, &swinum);
+    if (err)
+        return (0xFFFFFFFF);
+    return swinum;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      swi_call
+ Description:   Call a SWI
+ Parameters:    r-> a 10 register list of integers to pass to SWI
+                    (and to return result in)
+ Returns:       pointer to error, or 0 if no error
+ ******************************************************************/
+_kernel_oserror *swi_call(unsigned int swinum, int *r)
+{
+    _kernel_oserror *err;
+    _kernel_swi_regs regs;
+    regs.r[0] = r[0];
+    regs.r[1] = r[1];
+    regs.r[2] = r[2];
+    regs.r[3] = r[3];
+    regs.r[4] = r[4];
+    regs.r[5] = r[5];
+    regs.r[6] = r[6];
+    regs.r[7] = r[7];
+    regs.r[8] = r[8];
+    regs.r[9] = r[9];
+
+    err = _kernel_swi(swinum, &regs, &regs);
+
+    r[0] = regs.r[0];
+    r[1] = regs.r[1];
+    r[2] = regs.r[2];
+    r[3] = regs.r[3];
+    r[4] = regs.r[4];
+    r[5] = regs.r[5];
+    r[6] = regs.r[6];
+    r[7] = regs.r[7];
+    r[8] = regs.r[8];
+    r[9] = regs.r[9];
+    return err;
+}

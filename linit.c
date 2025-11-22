@@ -35,6 +35,10 @@
 #include "lauxlib.h"
 
 
+#ifdef __riscos
+LUAMOD_API int luaopen_riscos  (lua_State *L);
+#endif
+
 /*
 ** these libs are loaded by lua.c and are readily available to any Lua
 ** program
@@ -50,6 +54,9 @@ static const luaL_Reg loadedlibs[] = {
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_UTF8LIBNAME, luaopen_utf8},
   {LUA_DBLIBNAME, luaopen_debug},
+#ifdef __riscos
+  {"riscos", luaopen_riscos},
+#endif
   {NULL, NULL}
 };
 

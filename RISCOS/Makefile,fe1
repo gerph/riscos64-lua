@@ -30,13 +30,16 @@ CDEFINES   = -D_XOPEN_SOURCE=0
 
 CORE_O=	o.lapi o.lcode o.lctype o.ldebug o.ldo o.ldump o.lfunc o.lgc o.llex \
 	o.lmem o.lobject o.lopcodes o.lparser o.lstate o.lstring o.ltable \
-	o.ltm o.lundump o.lvm o.lzio o.ltests
+	o.ltm o.lundump o.lvm o.lzio
 AUX_O=	o.lauxlib
 LIB_O=	o.lbaselib o.ldblib o.liolib o.lmathlib o.loslib o.ltablib o.lstrlib \
 	o.lutf8lib o.loadlib o.lcorolib o.linit
 
+# RISC OS specific libraries
+RO_O = o.riscoslib o.riscos_sys
+
 # Objects to build, using the format o.<name> (will be varied for build type)
-OBJS       = ${CORE_O} ${LIB_O} ${AUX_O}
+OBJS       = ${CORE_O} ${LIB_O} ${AUX_O} ${RO_O}
 
 ifeq (${BUILD64},1)
 CDEFINES +=
