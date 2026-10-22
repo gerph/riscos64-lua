@@ -58,6 +58,9 @@ jobs:
       - name: Give the output a versioned name
         id: version
         run: |
+          # The checkout action only trusts the workspace temporarily, so git
+          # refuses to read it here when the container user differs from its owner.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           if [ -f RISCOS/VersionNum ] ; then
               version=$(sed '/MajorVersion / ! d ; s/.*MajorVersion *"\(.*\)"/\1/' RISCOS/VersionNum)
           else
